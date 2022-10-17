@@ -1,0 +1,65 @@
+@startuml
+node "kart server instance" {
+  interface HTTP as ServerInfoHTTP
+  interface UDP as ServerInfoUDP
+
+  database Volume
+
+  [Srb2Kart] - ServerInfoUDP
+  [Srb2Kart Translator] - ServerInfoHTTP
+
+  [Srb2Kart Translator] --> ServerInfoUDP
+
+  Srb2Kart --> Volume
+}
+
+node Aggregator {
+  interface HTTP as AggregatorHTTP
+  [Srb2KartAggregator] - AggregatorHTTP
+
+  Srb2KartAggregator --> ServerInfoHTTP
+}
+
+node "Addon Management" {
+  interface HTTP as AddonCRUDHTTP
+  [AddonCRUD] - AddonCRUDHTTP
+
+  database AddonMetadata
+
+  AddonCRUD --> AddonMetadata
+}
+
+node "Instance Management TODO" {
+}
+
+node Discord {
+  [Client Owner]
+
+  package Commands {
+    [Discord Status] 
+    [Addon]
+
+    [Discord Status] --> AggregatorHTTP
+    Addon --> AddonCRUDHTTP
+  }
+
+  [Client Owner] --> Commands
+}
+
+node Website {
+  [StatusUI] --> AggregatorHTTP
+  [AddonUI] --> AddonCRUDHTTP
+}
+
+node "Command Line" {
+  package "CLI Commands" {
+    [cli Status]
+    [cli Addons]
+    [cli Server Instance]
+
+    [cli Status] --> AggregatorHTTP
+    [cli Addons] --> AddonCRUDHTTP
+    [cli Server Instance]
+  }
+}
+@enduml
