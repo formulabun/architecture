@@ -6,20 +6,80 @@ node "kart server instance" {
   database Volume
 
   [Srb2Kart] - ServerInfoUDP
-  [Srb2Kart Translator] - ServerInfoHTTP
+  [Srb2KartTranslator] - ServerInfoHTTP
 
-  [Srb2Kart Translator] --> ServerInfoUDP
+  Srb2KartTranslator --> ServerInfoUDP
 
   Srb2Kart --> Volume
 }
 
-node Aggregator {
-  interface HTTP as AggregatorHTTP
-  [Srb2KartAggregator] - AggregatorHTTP
+node "Replays" {
+  interface HTTP as ReplayStoreHTTP
+  interface HTTP as ReplayUploadHTTP
+  interface HTTP as ReplayStaffHTTP
 
-  Srb2KartAggregator --> ServerInfoHTTP
+  [ReplayServer] - ReplayStoreHTTP
+  [ReplayIngest] - ReplayUploadHTTP
+  [ReplayStaff] - ReplayStaffHTTP
+
+  database ReplayStore
+  database ReplayVolume
+
+  ReplayServer ---> ReplayStore
+  ReplayIngest ---> ReplayStore
+
+  ReplayIngest ---> ReplayVolume
+  ReplayStaff ---> ReplayVolume
 }
 
+node Discord {
+  [ClientOwner]
+  [DiscordStatus] 
+
+  package Commands {
+    [/players] ---> ServerInfoHTTP
+
+    package "/replays" {
+      [/replay download] ---> ReplayStaffHTTP
+      [/replay upload] ---> ReplayUploadHTTP
+      [/replay search] ---> ReplayStoreHTTP
+    }
+  }
+
+  DiscordStatus -up-> ServerInfoHTTP 
+
+  ClientOwner -right-> Commands
+  ClientOwner --> DiscordStatus
+}
+
+' Works in Progres
+/'
+node Website {
+  [StatusUI] -->  ServerInfoHTTP
+  [AddonUI] --> AddonCRUDHTTP
+}
+'/
+
+/'
+node "Command Line" {
+  package "CLI Commands" {
+    [cli Status]
+    [cli Addons]
+    [cli Server Instance]
+
+    [cli Status] --> ServerInfoHTTP
+    [cli Addons] --> AddonCRUDHTTP
+    [cli Server Instance]
+  }
+}
+'/
+
+/'
+node "Instance Management TODO" {
+}
+'/
+
+/'
 node "Addon Management" {
   interface HTTP as AddonCRUDHTTP
   [AddonCRUD] - AddonCRUDHTTP
@@ -28,38 +88,6 @@ node "Addon Management" {
 
   AddonCRUD --> AddonMetadata
 }
+'/
 
-node "Instance Management TODO" {
-}
-
-node Discord {
-  [Client Owner]
-
-  package Commands {
-    [Discord Status] 
-    [Addon]
-
-    [Discord Status] --> AggregatorHTTP
-    Addon --> AddonCRUDHTTP
-  }
-
-  [Client Owner] --> Commands
-}
-
-node Website {
-  [StatusUI] --> AggregatorHTTP
-  [AddonUI] --> AddonCRUDHTTP
-}
-
-node "Command Line" {
-  package "CLI Commands" {
-    [cli Status]
-    [cli Addons]
-    [cli Server Instance]
-
-    [cli Status] --> AggregatorHTTP
-    [cli Addons] --> AddonCRUDHTTP
-    [cli Server Instance]
-  }
-}
 @enduml
