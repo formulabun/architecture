@@ -14,19 +14,21 @@ node "kart server instance" {
 }
 
 node "Replays" {
-  interface HTTP as ReplayStoreHTTP
+  interface HTTP_Get as ReplayInfoGet
+  interface HTTP_Post as ReplayInfoPost
   interface HTTP as ReplayUploadHTTP
   interface HTTP as ReplayStaffHTTP
 
-  [ReplayServer] - ReplayStoreHTTP
-  [ReplayIngest] - ReplayUploadHTTP
-  [ReplayStaff] - ReplayStaffHTTP
+  [ReplayServer] -up- ReplayInfoGet
+  [ReplayServer] -left- ReplayInfoPost
+  [ReplayIngest] -up- ReplayUploadHTTP
+  [ReplayStaff] -up- ReplayStaffHTTP
 
-  database ReplayStore
+  database ReplayInfo
   database ReplayVolume
 
-  ReplayServer ---> ReplayStore
-  ReplayIngest ---> ReplayStore
+  ReplayServer ---> ReplayInfo
+  ReplayIngest --right-> ReplayInfoPost
 
   ReplayIngest ---> ReplayVolume
   ReplayStaff ---> ReplayVolume
@@ -42,7 +44,7 @@ node Discord {
     package "/replays" {
       [/replay download] ---> ReplayStaffHTTP
       [/replay upload] ---> ReplayUploadHTTP
-      [/replay search] ---> ReplayStoreHTTP
+      [/replay search] ---> ReplayInfoGet
     }
   }
 
